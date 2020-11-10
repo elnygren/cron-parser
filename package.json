@@ -1,0 +1,32 @@
+{
+  "name": "date-fns-cron",
+  "version": "0.1.0",
+  "description": "Cron parser for date-fns",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha -r ts-node/register test/**/*.test.ts && tap --no-ts --node-arg=--require=ts-node/register test/cron-parser/*.js",
+    "test-fast": "mocha -r ts-node/register test/**/*.test.ts",
+    "test-tap": "tap --no-coverage --no-ts --timeout=10 --node-arg=--require=ts-node/register test/cron-parser/expression.js",
+    "test-tap-only": "tap --only --no-coverage --no-ts --timeout=10 --node-arg=--require=ts-node/register test/cron-parser/expression.js"
+  },
+  "keywords": [
+    "date-fns",
+    "date",
+    "cron",
+    "crontab"
+  ],
+  "author": "Elias Nygrén (@elnygren)",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.0.3",
+    "chai": "^4.2.0",
+    "mocha": "^8.2.0",
+    "nyc": "^15.1.0",
+    "sinon": "^9.2.1",
+    "tap": "^14.10.8",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.5",
+    "util": "^0.12.3"
+  }
+}
