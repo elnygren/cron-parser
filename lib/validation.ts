@@ -30,6 +30,30 @@ export const PREDEFINED = {
   '@hourly': '0 * * * *'
 };
 
+export const ALIASES = {
+  // weekdays
+  sun: '0',
+  mon: '1',
+  tue: '2',
+  wed: '3',
+  thu: '4',
+  fri: '5',
+  sat: '6',
+  // months
+  jan: '1',
+  feb: '2',
+  mar: '3',
+  apr: '4',
+  may: '5',
+  jun: '6',
+  jly: '7',
+  aug: '8',
+  sep: '9',
+  oct: '10',
+  nov: '11',
+  dec: '12',
+}
+
 
 /**
  * Numeric validations are as follows:

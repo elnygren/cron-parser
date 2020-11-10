@@ -6,7 +6,7 @@ import {
   Token,
   Tokens,
 } from './types'
-import { PREDEFINED, validateCell, validateTime } from './validation'
+import { ALIASES, PREDEFINED, validateCell, validateTime } from './validation'
 
 
 const possibleSyntaxError = (i: number, s: string): boolean => {
@@ -18,13 +18,16 @@ const possibleSyntaxError = (i: number, s: string): boolean => {
 
 
 function singleRowTokenizer(cronString: string, original: string): Token {
-  // check predefineds
-
-  const newCronString = Object.entries(PREDEFINED).reduce((acc, [predef, time]) =>
+  // replace aliases
+  let aliasesReplaced = cronString
+  aliasesReplaced = Object.entries(PREDEFINED).reduce((acc, [predef, time]) =>
     cronString.startsWith(predef) ? time : acc, cronString
   )
+  aliasesReplaced = Object.entries(ALIASES).reduce((acc, [match, time]) =>
+    acc.replaceAll(match, time), aliasesReplaced
+  )
 
-  const values = newCronString.split(/\s+/).filter(x => x !== '')
+  const values = aliasesReplaced.split(/\s+/).filter(x => x !== '')
   if (values.length < 5) {
     throw new Error(`invalid length detected in cron syntax: "${original}" has length ${values.length} (5 or 6 expected)`)
   }
@@ -96,7 +99,7 @@ function tokenizer(cronString: string): Tokens  {
   }
 
   blocks
-  .map(block => block.trim())
+  .map(block => block.trim().toLowerCase())
    // crontab comment
   .filter(block => !block.startsWith('#'))
    // skip empty lines if handling many lines

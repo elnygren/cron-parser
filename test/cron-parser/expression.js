@@ -528,6 +528,7 @@ t.only('reset to given date', function(t){
   }
 });
 
+// Note: does not apply
 // t.test('parse expression as UTC', function(t) {
 //   try {
 //     var options = {
@@ -555,60 +556,60 @@ t.only('reset to given date', function(t){
 
 // });
 
-// t.test('expression using days of week strings', function(t) {
-//   try {
-//     var interval = CronExpression.parse('15 10 * * MON-TUE');
-//     t.ok(interval, 'Interval parsed');
+t.test('expression using days of week strings', function(t) {
+  try {
+    var interval = CronExpression.parse('15 10 * * MON-TUE');
+    t.ok(interval, 'Interval parsed');
 
-//     var intervals = interval.iterate(8);
-//     t.ok(intervals, 'Found intervals');
+    var intervals = interval.iterate(8);
+    t.ok(intervals, 'Found intervals');
 
-//     for (var i = 0, c = intervals.length; i < c; i++) {
-//       var next = intervals[i];
-//       var day = next.getUTCDay();
+    for (var i = 0, c = intervals.length; i < c; i++) {
+      var next = intervals[i];
+      var day = next.getUTCDay();
 
 
-//       t.ok(next, 'Found next scheduled interval');
-//       t.ok(day == 1 || day == 2, 'Day matches')
-//       t.equal(next.getUTCHours(), 10, 'Hour matches');
-//       t.equal(next.getMinutes(), 15, 'Minute matches');
-//     }
-//   } catch (err) {
-//     t.ifError(err, 'Interval parse error');
-//   }
+      t.ok(next, 'Found next scheduled interval');
+      t.ok(day == 1 || day == 2, 'Day matches')
+      t.equal(next.getUTCHours(), 10, 'Hour matches');
+      t.equal(next.getMinutes(), 15, 'Minute matches');
+    }
+  } catch (err) {
+    t.ifError(err, 'Interval parse error');
+  }
 
-//   t.end();
-// });
+  t.end();
+});
 
-// t.test('expression using mixed days of week strings', function(t) {
-//   try {
-//     var options = {
-//       currentDate: new Date('Wed, 26 Dec 2012 14:38:53')
-//     };
+t.test('expression using mixed days of week strings', function(t) {
+  try {
+    var options = {
+      currentDate: new Date('Wed, 26 Dec 2012 14:38:53')
+    };
 
-//     var interval = CronExpression.parse('15 10 * jAn-FeB mOn-tUE', options);
-//     t.ok(interval, 'Interval parsed');
+    var interval = CronExpression.parse('15 10 * jAn-FeB mOn-tUE', options);
+    t.ok(interval, 'Interval parsed');
 
-//     var intervals = interval.iterate(8);
-//     t.ok(intervals, 'Found intervals');
+    var intervals = interval.iterate(8);
+    t.ok(intervals, 'Found intervals');
 
-//     for (var i = 0, c = intervals.length; i < c; i++) {
-//       var next = intervals[i];
-//       var day = next.getUTCDay();
-//       var month = next.getMonth();
+    for (var i = 0, c = intervals.length; i < c; i++) {
+      var next = intervals[i];
+      var day = next.getUTCDay();
+      var month = next.getMonth();
 
-//       t.ok(next, 'Found next scheduled interval');
-//       t.ok(month == 0 || month == 2, 'Month Matches');
-//       t.ok(day == 1 || day == 2, 'Day matches');
-//       t.equal(next.getUTCHours(), 10, 'Hour matches');
-//       t.equal(next.getMinutes(), 15, 'Minute matches');
-//     }
-//   } catch (err) {
-//     t.ifError(err, 'Interval parse error');
-//   }
+      t.ok(next, 'Found next scheduled interval');
+      t.ok(month == 0 || month == 2, 'Month Matches');
+      t.ok(day == 1 || day == 2, 'Day matches');
+      t.equal(next.getUTCHours(), 10, 'Hour matches');
+      t.equal(next.getMinutes(), 15, 'Minute matches');
+    }
+  } catch (err) {
+    t.ifError(err, 'Interval parse error');
+  }
 
-//   t.end();
-// });
+  t.end();
+});
 
 t.test('expression using non-standard second field (wildcard)', function(t) {
   try {
