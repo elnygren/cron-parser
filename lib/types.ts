@@ -44,11 +44,3 @@ export type CronConfig = {
   command?: string,
   variables?: { [key in string]: string }
 }
-
-
-/* Type guards */
-
-export const isNumber = (x: any): x is number => !isNaN(parseInt(x, 10))
-
-export type Token = { command?: string, time: CronCell[] }
-export type Tokens = { variables: { [x in string]: string }, expressions: Array<Token> }

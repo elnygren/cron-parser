@@ -164,7 +164,6 @@ function maxDay(state: TimeState, reversed: boolean): number {
 }
 
 
-
 /**
  * Recursively increment 'i'th time state and any that might be dependent on it.
  * Mutates the state array due to performance reasons.
@@ -184,7 +183,6 @@ function maxDay(state: TimeState, reversed: boolean): number {
  *
  */
 const incrementState = (validTimes: ValidTimes, state: TimeState, i: TimeStateIndex, reversed: boolean) => {
-  // console.log("-->", validTimes, state, i)
   if (i >= state.length) return
 
   // Day of month and week matching:
@@ -250,12 +248,10 @@ const incrementState = (validTimes: ValidTimes, state: TimeState, i: TimeStateIn
     const predicate: (v: number) => boolean = reversed ? v => v < state[i] : v => v > state[i]
     const newState = validsNormalised.find(predicate)
 
-    // console.log('--->', newState)
 
     if (newState !== undefined && (i !== TIMES.DAY_OF_MONTH || leapYearCheck(state, newState))) {
       state[i] = newState
     } else { // overflow
-      // console.log("overflow")
       state[i] = validsNormalised[0]
       incrementState(validTimes, state, i + 1, reversed)
     }
@@ -268,7 +264,6 @@ const incrementState = (validTimes: ValidTimes, state: TimeState, i: TimeStateIn
  * returns true if state was shifted.
  */
 function incrementStateUnlessValid(validTimes: ValidTimes, state: TimeState, i: TimeStateIndex, reversed: boolean): boolean {
-  // console.log("shiftUnlessValid", state, i)
 
   // shift days if neither matches OR if both are not wildcard
   if (i === TIMES.DAY_OF_MONTH) {
@@ -309,14 +304,11 @@ function incrementStateUnlessValid(validTimes: ValidTimes, state: TimeState, i: 
 export function* dateGen(ast: CronAST, opts: CronGenOptions): CronGenerator {
   const reversed = opts.reverse || false
 
-  let endDate = opts.endDate
-  let startDate = new Date(opts.startDate || new Date())
-
-  if (reversed && endDate instanceof Date && endDate > startDate) {
-    let _temp = endDate
-    endDate = startDate
-    startDate = _temp
-  }
+  // swap dates if reverse and they need swappin to make a valid range
+  const startDateWithDefault = new Date(opts.startDate || new Date())
+  const swapStartEnd = (reversed && opts.endDate instanceof Date && opts.endDate > startDateWithDefault)
+  const startDate = (swapStartEnd && opts.endDate) ? opts.endDate : startDateWithDefault
+  const endDate = swapStartEnd ? startDateWithDefault : opts.endDate
 
   const validTimes = validTimesForAST(ast, reversed)
 
@@ -324,11 +316,9 @@ export function* dateGen(ast: CronAST, opts: CronGenOptions): CronGenerator {
     ? stateFromDate(opts.customState)
     : stateFromDate(startDate)
 
-  // console.log("state", state, "valids", JSON.stringify(validTimes, null, 2), "start", startDate, "endDate", endDate)
   // Let's get down to business.
   // Handle times from smallest to largest, incrementing them to the next valid time if they're not valid.
   while (true) {
-    // console.log('loop', dateFromState(state), endDate, startDate)
 
     incrementStateUnlessValid(validTimes, state, TIMES.SECOND, reversed)
     incrementStateUnlessValid(validTimes, state, TIMES.MINUTE, reversed)

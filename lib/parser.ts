@@ -2,11 +2,28 @@ import {
   CronCell,
   CronAST,
   CronConfig,
-  isNumber,
-  Token,
-  Tokens,
 } from './types'
-import { ALIASES, PREDEFINED, validateCell, validateTime } from './validation'
+import { validateCell, validateMonthAndDay } from './validation'
+
+export type Token = { command?: string, time: CronCell[] }
+export type Tokens = { variables: { [x in string]: string }, expressions: Array<Token> }
+export const isNumber = (x: any): x is number => !isNaN(parseInt(x, 10))
+
+const PREDEFINED = {
+  '@yearly': '0 0 1 1 *',
+  '@monthly': '0 0 1 * *',
+  '@weekly': '0 0 * * 0',
+  '@daily': '0 0 * * *',
+  '@hourly': '0 * * * *'
+};
+
+const ALIASES = {
+  // weekdays
+  sun: '0', mon: '1', tue: '2', wed: '3', thu: '4', fri: '5', sat: '6',
+  // months
+  jan: '1', feb: '2', mar: '3', apr: '4', may: '5', jun: '6',
+  jly: '7', aug: '8', sep: '9', oct: '10', nov: '11', dec: '12',
+}
 
 
 const possibleSyntaxError = (i: number, s: string): boolean => {
@@ -16,9 +33,14 @@ const possibleSyntaxError = (i: number, s: string): boolean => {
   return false
 }
 
+/**
+ * Tokenize a single crontab line that is assumed to be preprocessed by the top level tokenizer
+ *
+ * @param cronString crontab line, eg. `1 2 3 4 5` preprocessed by tokenizer
+ * @param errMsg suitable print to error message, e.g the original user input
+ */
+function singleRowTokenizer(cronString: string, errMsg: string): Token {
 
-function singleRowTokenizer(cronString: string, original: string): Token {
-  // replace aliases
   let aliasesReplaced = cronString
   aliasesReplaced = Object.entries(PREDEFINED).reduce((acc, [predef, time]) =>
     cronString.startsWith(predef) ? time : acc, cronString
@@ -28,13 +50,15 @@ function singleRowTokenizer(cronString: string, original: string): Token {
   )
 
   const values = aliasesReplaced.split(/\s+/).filter(x => x !== '')
+
   if (values.length < 5) {
-    throw new Error(`invalid length detected in cron syntax: "${original}" has length ${values.length} (5 or 6 expected)`)
+    throw new Error(
+      `invalid length detected in cron syntax: "${errMsg}" has length ${values.length} (5 or 6 expected)`
+    )
   }
 
   let time: CronCell[] = []
   let command = ''
-
 
   for (let i = 0; i < values.length; i++) {
     let match; // regexp tricks
@@ -99,13 +123,14 @@ function singleRowTokenizer(cronString: string, original: string): Token {
 }
 
 
-
 /**
  * Tokenizer takes in a Cron string and outputs a list of CronCells.
+ * Cron string can be a crontab file (as a string) or a single row crontab entry with or without a command.
+ *
  * These CronCells may still contains invalid numbers even though the syntax was correct.
  * We validate the CronCells in the parser when we create the CronAST.
  *
- * Note that we also support crontab file format so we need to check for ENVs, comments, commands.
+ * We support ENVs, comments, commands from the crontab file format.
  */
 function tokenizer(cronString: string): Tokens {
   const blocks = cronString.split('\n')
@@ -138,22 +163,22 @@ function tokenizer(cronString: string): Tokens {
 
 /**
  * Map tokens to a CronConfig.
- * We want this so we can normalize all input formats to CronConfig.
+ * Note that we normalize all input formats to CronConfig and then provide a CronConfig=>CronAST function.
  */
-function tokensToCronConfig(CronCells: CronCell[], { command, variables }: { command?: string, variables?: { [key in string]: string } }): CronConfig {
-  if (CronCells.length === 5) {
-    const [minutes, hour, dayOfMonth, month, dayOfWeek] = CronCells
+function tokensToCronConfig(cells: CronCell[], { command, variables }: { command?: string, variables?: { [key in string]: string } }): CronConfig {
+  if (cells.length === 5) {
+    const [minutes, hour, dayOfMonth, month, dayOfWeek] = cells
     return { minutes, hour, dayOfMonth, month, dayOfWeek, command, variables }
-  } else if (CronCells.length === 6) {
-    const [seconds, minutes, hour, dayOfMonth, month, dayOfWeek] = CronCells
+  } else if (cells.length === 6) {
+    const [seconds, minutes, hour, dayOfMonth, month, dayOfWeek] = cells
     return { seconds, minutes, hour, dayOfMonth, month, dayOfWeek, command, variables }
   }
-  throw new Error(`Invalid length for cron input: ${CronCells} has length ${CronCells.length}, expected 5 or 6.`);
+  throw new Error(`Invalid length for cron input: ${cells} has length ${cells.length}, expected 5 or 6.`);
 }
 
 /** Validate data and create the CronAST. */
 function toValidAST(input: CronConfig): CronAST {
-  const cronFormat: CronAST = {
+  const ast: CronAST = {
     time: {
       minutes: validateCell('minutes', input.minutes === undefined ? { type: '*' } : input.minutes),
       hour: validateCell('hour', input.hour === undefined ? { type: '*' } : input.hour),
@@ -165,7 +190,11 @@ function toValidAST(input: CronConfig): CronAST {
     command: input.command,
     variables: input.variables,
   }
-  return validateTime(cronFormat)
+
+  if (!validateMonthAndDay(ast)) {
+    throw new Error(`invalid dayOfMonth (${JSON.stringify(ast.time.dayOfMonth)}) for given month(s)`);
+  }
+  return ast
 }
 
 /**

@@ -2,56 +2,17 @@ import {
   CronCell,
   CronAST,
 } from './types'
-import { assertUnreachable, prettyPrint, prettyPrintCell, range } from './utils';
+import { assertUnreachable, prettyPrint, range } from './utils';
 
 export const MAX_DATE = new Date(8640000000000000);
 
 /** Amount of days in Jan...Dec, with 29 in February ((non) leap years must be handled explicitly) */
-export const DAYS_IN_MONTH = [
-  31,
-  29,
-  31,
-  30,
-  31,
-  30,
-  31,
-  31,
-  30,
-  31,
-  30,
-  31
-];
+export const DAYS_IN_MONTH = [ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ];
 
-export const PREDEFINED = {
-  '@yearly': '0 0 1 1 *',
-  '@monthly': '0 0 1 * *',
-  '@weekly': '0 0 * * 0',
-  '@daily': '0 0 * * *',
-  '@hourly': '0 * * * *'
-};
 
-export const ALIASES = {
-  // weekdays
-  sun: '0',
-  mon: '1',
-  tue: '2',
-  wed: '3',
-  thu: '4',
-  fri: '5',
-  sat: '6',
-  // months
-  jan: '1',
-  feb: '2',
-  mar: '3',
-  apr: '4',
-  may: '5',
-  jun: '6',
-  jly: '7',
-  aug: '8',
-  sep: '9',
-  oct: '10',
-  nov: '11',
-  dec: '12',
+/** The classic leap year validator */
+export function isLeapYear(year: number): boolean {
+  return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)
 }
 
 
@@ -97,7 +58,7 @@ export const validateCell = (field: keyof CronAST['time'], val: CronCell): CronC
     }
   }
   if (validate(val)) return val
-  throw new Error(`Invalid value for ${field} (${prettyPrintCell(val)})`)
+  throw new Error(`Invalid value for ${field} (${prettyPrint(val)})`)
 }
 
 const dayValueForDoMValidation = (val: CronCell): number => {
@@ -121,7 +82,7 @@ const dayValueForDoMValidation = (val: CronCell): number => {
   }
 }
 
-const validateMonth = (ast: CronAST): boolean => {
+export const validateMonthAndDay = (ast: CronAST): boolean => {
   const month = ast.time.month
   const dayOfMonth = dayValueForDoMValidation(ast.time.dayOfMonth)
   switch (month.type) {
@@ -142,16 +103,4 @@ const validateMonth = (ast: CronAST): boolean => {
     default:
       return assertUnreachable(month)
   }
-}
-
-export const validateTime = (ast: CronAST): CronAST => {
-  if (!validateMonth(ast)) {
-    throw new Error(`invalid dayOfMonth (${JSON.stringify(ast.time.dayOfMonth)}) for given month(s)`);
-  }
-  return ast
-}
-
-
-export function isLeapYear(year: number): boolean {
-  return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)
 }

@@ -4,6 +4,11 @@ export function assertUnreachable(x: never): never {
   throw new Error("assertUnreachable");
 }
 
+export function range(start: number, end: number): number[] {
+  return new Array(end - start).fill(0).map((d, i) => i + start);
+}
+
+/** prettyPrint helper */
 const pp = (val: CronCell): string => {
   switch (val.type) {
     case '*':
@@ -25,13 +30,14 @@ const pp = (val: CronCell): string => {
   }
 }
 
-export function prettyPrintCell(x: CronCell) {
-  return pp(x)
-}
 
 /** Pretty print the AST and some intermediary formats */
-export function prettyPrint(x: string[] | CronCell[] | CronAST): string {
+export function prettyPrint(x: string[] | CronCell[] | CronCell | CronAST): string {
   if (Array.isArray(x)) return x.join(' ')
+
+  if (typeof (x as CronCell).type === 'string') {
+    return pp(x as CronCell)
+  }
 
   const t = (x as CronAST).time
   const out = `${pp(t.minutes)} ${pp(t.hour)} ${pp(t.dayOfMonth)} ${pp(t.month)} ${pp(t.dayOfWeek)}`
@@ -41,6 +47,3 @@ export function prettyPrint(x: string[] | CronCell[] | CronAST): string {
   return `${pp(t.seconds)} ${out}`
 }
 
-export function range(start: number, end: number) {
-  return new Array(end - start).fill(0).map((d, i) => i + start);
-}

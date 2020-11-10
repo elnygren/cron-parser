@@ -387,7 +387,6 @@ t.test('expression limited with start and end date', function(t) {
     t.ok(interval, 'Interval parsed');
 
     var dates = interval.iterate(10);
-    console.log('asd', dates)
     t.equal(dates.length, 7, 'Dates count matches for positive iteration');
 
     interval.reset();
