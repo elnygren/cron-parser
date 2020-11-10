@@ -12,8 +12,10 @@ const pp = (val: CronCell): string => {
       return `${val.value}`
     case 'step':
       return `*/${val.step}`
-    case 'steprange':
+    case 'stepfrom':
       return `${val.from}/${val.step}`
+    case 'steprange':
+      return `${val.from}-${val.to}/${val.step}`
     case 'range':
       return `${val.from}-${val.to}`
     case 'list':

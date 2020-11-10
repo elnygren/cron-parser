@@ -76,7 +76,6 @@ function validDataForField(field: keyof CronAST['time'], ast: CronAST, reversed:
   const sorted = (v: number[]) =>
     reversed ? v.sort((a, b) => b - a) : v.sort((a, b) => a - b)
 
-  // let values;
   switch (cell.type) {
     case '*':
       return true
@@ -84,10 +83,14 @@ function validDataForField(field: keyof CronAST['time'], ast: CronAST, reversed:
       return [cell.value]
     case 'step':
       return sorted(range(from, to + 1).filter(time => ((time - from) % cell.step) === 0))
-    case 'steprange':
+    case 'stepfrom':
       // we match every cell.step from cell.from, eg. every 5th minute from 6 to 59
-      const normalizedTime = (time: number) => (time - from - cell.from)
-      return sorted(range(cell.from, to + 1).filter(time => ((normalizedTime(time) >= 0) && (normalizedTime(time) % cell.step) === 0)))
+      const normalizedTime1 = (time: number) => (time - from - cell.from)
+      return sorted(range(Math.max(cell.from, from), to + 1).filter(time => ((normalizedTime1(time) >= 0) && (normalizedTime1(time) % cell.step) === 0)))
+    case 'steprange':
+      const normalizedTime2 = (time: number) => (time - from - cell.from)
+      const stepFromTo = sorted(range(Math.max(cell.from, from), Math.min(cell.to, to) + 1))
+      return stepFromTo.filter(time => ((normalizedTime2(time) >= 0) && (normalizedTime2(time) % cell.step) === 0))
     case 'range':
       return sorted(range(Math.max(cell.from, from), Math.min(cell.to, to) + 1))
     case 'list':
@@ -326,8 +329,6 @@ export function* dateGen(ast: CronAST, opts: CronGenOptions): CronGenerator {
   // Handle times from smallest to largest, incrementing them to the next valid time if they're not valid.
   while (true) {
     // console.log('loop', dateFromState(state), endDate, startDate)
-    if (!reversed && endDate && dateFromState(state).getTime() > endDate.getTime()) return null
-    if (reversed && endDate && dateFromState(state).getTime() < Math.min(endDate.getTime(), startDate.getTime())) return null
 
     incrementStateUnlessValid(validTimes, state, TIMES.SECOND, reversed)
     incrementStateUnlessValid(validTimes, state, TIMES.MINUTE, reversed)
@@ -343,11 +344,16 @@ export function* dateGen(ast: CronAST, opts: CronGenOptions): CronGenerator {
     }
 
     // if we are still at startDate, we need to get the next one (due to spec)
-    if (startDate.getTime() == dateFromState(state).getTime())
+    const stateMS = dateFromState(state).getTime()
+    if (startDate.getTime() == stateMS)
       incrementState(validTimes, state, TIMES.SECOND, reversed)
 
-    yield dateFromState(state)
+    // only yield allowed values
+    if (!reversed && endDate && stateMS > endDate.getTime()) return null
+    if (reversed && endDate && stateMS < Math.min(endDate.getTime(), startDate.getTime())) return null
 
+    // yield & increment, start over
+    yield dateFromState(state)
     incrementState(validTimes, state, TIMES.SECOND, reversed)
   }
 }

@@ -33,7 +33,7 @@ function validDataForField(field: keyof CronAST['time'], ast: CronAST,): true | 
       return new Set([cell.value])
     case 'step':
       return new Set(range(from, to+1).filter(time => ((time - from) % cell.step) === 0))
-    case 'steprange':
+    case 'stepfrom':
       // we match every cell.step from cell.from, eg. every 5th minute from 6 to 59
       const normalizedTime = (time: number) => (time - from - cell.from)
       return new Set(range(cell.from, to+1).filter(time => ((normalizedTime(time) >= 0) && (normalizedTime(time) % cell.step) === 0)))

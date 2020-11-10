@@ -41,16 +41,33 @@ function singleRowTokenizer(cronString: string, original: string): Token {
     const s = values[i];
 
     // wildcard case
-    if (s === '*' || s === '?') time.push({type: '*'})
+    if (s === '*' || s === '?') time.push({ type: '*' })
 
     // step
     else if (match = s.match(/^\*\/(\d{1,2})$/)) {
-      time.push({ type: 'step', step: parseInt(match[1], 10) })
+      time.push({
+        type: 'step',
+        step: parseInt(match[1], 10)
+      })
+    }
+
+    // stepfrom
+    else if (match = s.match(/^(\d{1,2})\/(\d{1,2})$/)) {
+      time.push({
+        type: 'stepfrom',
+        step: parseInt(match[2], 10),
+        from: parseInt(match[1], 10)
+      })
     }
 
     // steprange
-    else if (match = s.match(/^(\d{1,2})\/(\d{1,2})$/)) {
-      time.push({ type: 'steprange', step: parseInt(match[2], 10), from: parseInt(match[1], 10) })
+    else if (match = s.match(/^(\d{1,2})-(\d{1,2})\/(\d{1,2})$/)) {
+      time.push({
+        type: 'steprange',
+        from: parseInt(match[1], 10),
+        to: parseInt(match[2], 10),
+        step: parseInt(match[3], 10),
+      })
     }
 
     // range, eg. 10-12
@@ -90,7 +107,7 @@ function singleRowTokenizer(cronString: string, original: string): Token {
  *
  * Note that we also support crontab file format so we need to check for ENVs, comments, commands.
  */
-function tokenizer(cronString: string): Tokens  {
+function tokenizer(cronString: string): Tokens {
   const blocks = cronString.split('\n')
 
   const response: Tokens = {
@@ -99,21 +116,21 @@ function tokenizer(cronString: string): Tokens  {
   }
 
   blocks
-  .map(block => block.trim().toLowerCase())
-   // crontab comment
-  .filter(block => !block.startsWith('#'))
-   // skip empty lines if handling many lines
-  .filter(block => blocks.length > 1 ? block.length !== 0 : true)
-  .forEach((block) => {
-    // crontab ENV variable
-    const matches = block.match(/^(.*)=(.*)$/)
-    if (matches) {
-      response.variables[matches[1].trim()] = matches[2].trim();
-    } else {
-      // crontab expression
-      response.expressions.push(singleRowTokenizer(block, cronString))
-    }
-  })
+    .map(block => block.trim().toLowerCase())
+    // crontab comment
+    .filter(block => !block.startsWith('#'))
+    // skip empty lines if handling many lines
+    .filter(block => blocks.length > 1 ? block.length !== 0 : true)
+    .forEach((block) => {
+      // crontab ENV variable
+      const matches = block.match(/^(.*)=(.*)$/)
+      if (matches) {
+        response.variables[matches[1].trim()] = matches[2].trim();
+      } else {
+        // crontab expression
+        response.expressions.push(singleRowTokenizer(block, cronString))
+      }
+    })
 
   return response
 }
@@ -123,7 +140,7 @@ function tokenizer(cronString: string): Tokens  {
  * Map tokens to a CronConfig.
  * We want this so we can normalize all input formats to CronConfig.
  */
-function tokensToCronConfig(CronCells: CronCell[], {command, variables}: {command?: string, variables?: { [key in string]: string }}): CronConfig {
+function tokensToCronConfig(CronCells: CronCell[], { command, variables }: { command?: string, variables?: { [key in string]: string } }): CronConfig {
   if (CronCells.length === 5) {
     const [minutes, hour, dayOfMonth, month, dayOfWeek] = CronCells
     return { minutes, hour, dayOfMonth, month, dayOfWeek, command, variables }
@@ -138,11 +155,11 @@ function tokensToCronConfig(CronCells: CronCell[], {command, variables}: {comman
 function toValidAST(input: CronConfig): CronAST {
   const cronFormat: CronAST = {
     time: {
-      minutes: validateCell('minutes', input.minutes === undefined ? { type: '*'} : input.minutes),
-      hour: validateCell('hour', input.hour === undefined ? { type: '*'} : input.hour),
-      dayOfMonth: validateCell('dayOfMonth', input.dayOfMonth === undefined ? { type: '*'} : input.dayOfMonth),
-      month: validateCell('month', input.month === undefined ? { type: '*'} : input.month),
-      dayOfWeek: validateCell('dayOfWeek', input.dayOfWeek === undefined ? { type: '*'} : input.dayOfWeek),
+      minutes: validateCell('minutes', input.minutes === undefined ? { type: '*' } : input.minutes),
+      hour: validateCell('hour', input.hour === undefined ? { type: '*' } : input.hour),
+      dayOfMonth: validateCell('dayOfMonth', input.dayOfMonth === undefined ? { type: '*' } : input.dayOfMonth),
+      month: validateCell('month', input.month === undefined ? { type: '*' } : input.month),
+      dayOfWeek: validateCell('dayOfWeek', input.dayOfWeek === undefined ? { type: '*' } : input.dayOfWeek),
       seconds: input.seconds !== undefined ? validateCell('seconds', input.seconds) : { type: 'number', value: 0 },
     },
     command: input.command,
@@ -175,7 +192,7 @@ function toValidAST(input: CronConfig): CronAST {
 export function parser(input: string | CronConfig | CronConfig[]): CronAST[] {
   let _input: CronConfig[];
   if (typeof input === 'string') {
-    const {expressions, variables} = tokenizer(input)
+    const { expressions, variables } = tokenizer(input)
     _input = expressions.map(expr => tokensToCronConfig(expr.time, { command: expr.command, variables }))
   } else if (Array.isArray(input)) {
     _input = input

@@ -84,8 +84,10 @@ export const validateCell = (field: keyof CronAST['time'], val: CronCell): CronC
         return validator(val.value)
       case 'step':
         return validator(val.step) && val.step !== 0
-      case 'steprange':
+      case 'stepfrom':
         return validator(val.step) && val.step !== 0 && validator(val.from)
+      case 'steprange':
+        return validator(val.step) && val.step !== 0 && validator(val.from) && validator(val.to)
       case 'range':
         return validator(val.from) && validator(val.to)
       case 'list':
@@ -98,14 +100,15 @@ export const validateCell = (field: keyof CronAST['time'], val: CronCell): CronC
   throw new Error(`Invalid value for ${field} (${prettyPrintCell(val)})`)
 }
 
-// largest day for a dayOfMonth CronCell (that is relevant for validating DayOfMonth)
-const maxDay = (val: CronCell): number => {
+const dayValueForDoMValidation = (val: CronCell): number => {
   switch (val.type) {
     case '*':
       return -1
     case 'number':
       return val.value
     case 'step':
+      return val.step
+    case 'stepfrom':
       return val.step
     case 'steprange':
       return val.step
@@ -119,24 +122,25 @@ const maxDay = (val: CronCell): number => {
 }
 
 const validateMonth = (ast: CronAST): boolean => {
-  const val = ast.time.month
-  const time = ast.time
-  const day = maxDay(time.dayOfMonth)
-  switch (val.type) {
+  const month = ast.time.month
+  const dayOfMonth = dayValueForDoMValidation(ast.time.dayOfMonth)
+  switch (month.type) {
     case '*':
       return true
     case 'number':
-      return day <= DAYS_IN_MONTH[val.value - 1]
+      return dayOfMonth <= DAYS_IN_MONTH[month.value - 1]
     case 'step':
-      return range(1, 13).filter(m => m - 1 % val.step === 0).some(month => day <= DAYS_IN_MONTH[month - 1])
+      return range(0, 12).filter(m => m % month.step === 0).some(m => dayOfMonth <= DAYS_IN_MONTH[m])
+    case 'stepfrom':
+      return range(0, 12).filter(m => m % month.step === 0).some(m => dayOfMonth <= DAYS_IN_MONTH[m])
     case 'steprange':
-      return range(1, 13).filter(m => m - 1 % val.step === 0).some(month => day <= DAYS_IN_MONTH[month - 1])
+      return range(month.from, month.to).filter(m => m % month.step === 0).some(m => dayOfMonth <= DAYS_IN_MONTH[m])
     case 'range':
-      return range(val.from, val.to + 1).some(month => day <= DAYS_IN_MONTH[month - 1])
+      return range(month.from, month.to + 1).some(month => dayOfMonth <= DAYS_IN_MONTH[month - 1])
     case 'list':
-      return val.values.some(month => day <= DAYS_IN_MONTH[month - 1])
+      return month.values.some(month => dayOfMonth <= DAYS_IN_MONTH[month - 1])
     default:
-      return assertUnreachable(val)
+      return assertUnreachable(month)
   }
 }
 

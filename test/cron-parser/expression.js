@@ -387,6 +387,7 @@ t.test('expression limited with start and end date', function(t) {
     t.ok(interval, 'Interval parsed');
 
     var dates = interval.iterate(10);
+    console.log('asd', dates)
     t.equal(dates.length, 7, 'Dates count matches for positive iteration');
 
     interval.reset();
@@ -659,31 +660,31 @@ t.test('expression using non-standard second field (step)', function(t) {
   t.end();
 });
 
-// t.test('expression using non-standard second field (range)', function(t) {
-//   try {
-//     var options = {
-//       currentDate: new Date('Wed, 26 Dec 2012 14:38:00'),
-//       endDate: new Date('Wed, 26 Dec 2012 15:40:00')
-//     };
+t.only('expression using non-standard second field (range)', function(t) {
+  try {
+    var options = {
+      currentDate: new Date('Wed, 26 Dec 2012 14:38:00'),
+      endDate: new Date('Wed, 26 Dec 2012 15:40:00')
+    };
 
-//     var interval = CronExpression.parse('20-40/10 * * * * *', options);
-//     t.ok(interval, 'Interval parsed');
+    var interval = CronExpression.parse('20-40/10 * * * * *', options);
+    t.ok(interval, 'Interval parsed');
 
-//     var intervals = interval.iterate(3);
-//     t.ok(intervals, 'Found intervals');
+    var intervals = interval.iterate(3);
+    t.ok(intervals, 'Found intervals');
 
-//     for (var i = 0, c = intervals.length; i < c; i++) {
-//       var next = intervals[i];
+    for (var i = 0, c = intervals.length; i < c; i++) {
+      var next = intervals[i];
 
-//       t.ok(next, 'Found next scheduled interval');
-//       t.equal(next.getSeconds(), 20 + (i * 10), 'Second matches');
-//     }
-//   } catch (err) {
-//     t.ifError(err, 'Interval parse error');
-//   }
+      t.ok(next, 'Found next scheduled interval');
+      t.equal(next.getSeconds(), 20 + (i * 10), 'Second matches');
+    }
+  } catch (err) {
+    t.ifError(err, 'Interval parse error');
+  }
 
-//   t.end();
-// });
+  t.end();
+});
 
 t.test('expression using explicit month definition and */5 day of month step', function(t) {
   var firstIterator = CronExpression.parse('0 12 */5 6 *', {
