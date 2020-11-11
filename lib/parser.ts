@@ -133,7 +133,7 @@ function singleRowTokenizer(cronString: string, errMsg: string): Token {
  * We support ENVs, comments, commands from the crontab file format.
  */
 function tokenizer(cronString: string): Tokens {
-  const blocks = cronString.split('\n')
+  const blocks = cronString.toString().split('\n')
 
   const response: Tokens = {
     variables: {},
@@ -220,8 +220,8 @@ function toValidAST(input: CronConfig): CronAST {
  */
 export function parser(input: string | CronConfig | CronConfig[]): CronAST[] {
   let _input: CronConfig[];
-  if (typeof input === 'string') {
-    const { expressions, variables } = tokenizer(input)
+  if (typeof input === 'string' || input instanceof String) {
+    const { expressions, variables } = tokenizer(input.toString())
     _input = expressions.map(expr => tokensToCronConfig(expr.time, { command: expr.command, variables }))
   } else if (Array.isArray(input)) {
     _input = input

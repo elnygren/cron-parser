@@ -1,14 +1,7 @@
-import { CronAST, CronGenerator } from './types'
+import { CronAST, CronGenerator, CronGenOptions } from './types'
 import { assertUnreachable, range } from './utils';
-import { DAYS_IN_MONTH, isLeapYear, MAX_DATE } from './validation';
+import { DAYS_IN_MONTH, isLeapYear, MAX_DATE, toDate } from './validation';
 
-/** Generator's options */
-export type CronGenOptions = {
-  startDate?: Date,
-  endDate?: Date,
-  reverse?: boolean,
-  customState?: Date  // provide a custom starting state for the generator
-}
 
 /**
  * 'clock' is an array of TIMES.length slots
@@ -126,18 +119,20 @@ function validTimesForAST(ast: CronAST, reversed: boolean): ValidTimes {
 
 
 /** TimeState => Date */
-function dateFromState(state: TimeState): Date {
-  return new Date(Date.UTC(state[5], state[4], state[3], state[2], state[1], state[0]))
+function dateFromState(state: TimeState, utc: boolean): Date {
+  return utc
+    ? new Date(Date.UTC(state[5], state[4], state[3], state[2], state[1], state[0]))
+    : new Date(state[5], state[4], state[3], state[2], state[1], state[0])
 }
 
-function stateFromDate(date: Date): TimeState {
+function stateFromDate(date: Date, utc: boolean): TimeState {
   return [
-    date.getUTCSeconds(),
-    date.getUTCMinutes(),
-    date.getUTCHours(),
-    date.getUTCDate(),
-    date.getUTCMonth(),
-    date.getUTCFullYear(),
+    utc ? date.getUTCSeconds() : date.getSeconds(),
+    utc ? date.getUTCMinutes() : date.getMinutes(),
+    utc ? date.getUTCHours() : date.getHours(),
+    utc ? date.getUTCDate() : date.getDate(),
+    utc ? date.getUTCMonth() : date.getMonth(),
+    utc ? date.getUTCFullYear() : date.getFullYear(),
   ]
 }
 
@@ -182,7 +177,7 @@ function maxDay(state: TimeState, reversed: boolean): number {
  * to increment timestate to next valid time.
  *
  */
-const incrementState = (validTimes: ValidTimes, state: TimeState, i: TimeStateIndex, reversed: boolean) => {
+const incrementState = (validTimes: ValidTimes, state: TimeState, i: TimeStateIndex, reversed: boolean, utc: boolean) => {
   if (i >= state.length) return
 
   // Day of month and week matching:
@@ -207,10 +202,10 @@ const incrementState = (validTimes: ValidTimes, state: TimeState, i: TimeStateIn
         reversed ? state[i] -= 1 : state[i] += 1
       } else { // overflow, gotta handle that first
         state[TIMES.DAY_OF_MONTH] = maxDay(state, reversed)
-        incrementState(validTimes, state, i + 1, reversed)
+        incrementState(validTimes, state, i + 1, reversed, utc)
       }
       // is this a valid DoW ?
-      if (validTimes.day.dayOfWeek.includes(dateFromState(state).getUTCDay())) return
+      if (validTimes.day.dayOfWeek.includes(dateFromState(state, utc).getUTCDay())) return
 
       // if both are restricted, is this a valid Day of Month ?
       if (Array.isArray(validTimes.day.dayOfMonth) &&
@@ -235,7 +230,7 @@ const incrementState = (validTimes: ValidTimes, state: TimeState, i: TimeStateIn
       state[i] = nextVal
     } else {  // overflow
       state[i] = reversed ? maxMinValues[i].to : maxMinValues[i].from
-      incrementState(validTimes, state, i + 1, reversed)
+      incrementState(validTimes, state, i + 1, reversed, utc)
     }
   }
   // non-wildcard case, find next valid value
@@ -253,7 +248,7 @@ const incrementState = (validTimes: ValidTimes, state: TimeState, i: TimeStateIn
       state[i] = newState
     } else { // overflow
       state[i] = validsNormalised[0]
-      incrementState(validTimes, state, i + 1, reversed)
+      incrementState(validTimes, state, i + 1, reversed, utc)
     }
   }
 }
@@ -263,16 +258,16 @@ const incrementState = (validTimes: ValidTimes, state: TimeState, i: TimeStateIn
  * Handle incrementing TimeState to next valid time unless already valid,
  * returns true if state was shifted.
  */
-function incrementStateUnlessValid(validTimes: ValidTimes, state: TimeState, i: TimeStateIndex, reversed: boolean): boolean {
+function incrementStateUnlessValid(validTimes: ValidTimes, state: TimeState, i: TimeStateIndex, reversed: boolean, utc: boolean): boolean {
 
   // shift days if neither matches OR if both are not wildcard
   if (i === TIMES.DAY_OF_MONTH) {
     if (
       !(validTimes.day.dayOfMonth === true && validTimes.day.dayOfWeek === true) &&
       !(Array.isArray(validTimes.day.dayOfMonth) && validTimes.day.dayOfMonth[state[TIMES.MONTH]].includes(state[TIMES.DAY_OF_MONTH])) &&
-      !(Array.isArray(validTimes.day.dayOfWeek) && validTimes.day.dayOfWeek.includes(dateFromState(state).getUTCDay()))
+      !(Array.isArray(validTimes.day.dayOfWeek) && validTimes.day.dayOfWeek.includes(dateFromState(state, utc).getUTCDay()))
     ) {
-      incrementState(validTimes, state, TIMES.DAY_OF_MONTH, reversed)
+      incrementState(validTimes, state, TIMES.DAY_OF_MONTH, reversed, utc)
       return true
     }
     return false
@@ -284,7 +279,7 @@ function incrementStateUnlessValid(validTimes: ValidTimes, state: TimeState, i: 
 
   const valids = validTimes.basic[field]
   if (!(valids === true || valids.includes(state[i]))) {
-    incrementState(validTimes, state, i, reversed)
+    incrementState(validTimes, state, i, reversed, utc)
     return true
   }
   return false
@@ -301,49 +296,80 @@ function incrementStateUnlessValid(validTimes: ValidTimes, state: TimeState, i: 
  * @param ast CronAST from our parser
  * @param opts Generator options
  */
-export function* dateGen(ast: CronAST, opts: CronGenOptions): CronGenerator {
-  const reversed = opts.reverse || false
+export function* dateGen(ast: CronAST, _opts: CronGenOptions): CronGenerator {
+  const opts = {
+    startDate: toDate(_opts.startDate) || new Date(),
+    endDate: toDate(_opts.endDate),
+    reversed: _opts.reverse || false,
+    customState: toDate(_opts.customState),
+    debug: _opts.debug,
+    utc: (_opts.utc === undefined) ? true : _opts.utc,
+    zeroMS: _opts.zeroMS,
+  }
 
   // swap dates if reverse and they need swappin to make a valid range
-  const startDateWithDefault = new Date(opts.startDate || new Date())
-  const swapStartEnd = (reversed && opts.endDate instanceof Date && opts.endDate > startDateWithDefault)
-  const startDate = (swapStartEnd && opts.endDate) ? opts.endDate : startDateWithDefault
-  const endDate = swapStartEnd ? startDateWithDefault : opts.endDate
+  const swapStartEnd = (opts.reversed && opts.endDate instanceof Date && opts.endDate > opts.startDate)
+  const startDate = (swapStartEnd && opts.endDate) ? opts.endDate : opts.startDate
+  const endDate = swapStartEnd ? opts.startDate : opts.endDate
 
-  const validTimes = validTimesForAST(ast, reversed)
+  const validTimes = validTimesForAST(ast, opts.reversed)
+
+  if (opts.zeroMS) {
+    opts.customState?.setMilliseconds(0)
+    startDate.setMilliseconds(0)
+    endDate?.setMilliseconds(0)
+  }
 
   const state: TimeState = (opts.customState instanceof Date)
-    ? stateFromDate(opts.customState)
-    : stateFromDate(startDate)
+    ? stateFromDate(opts.customState, opts.utc)
+    : stateFromDate(startDate, opts.utc)
+
+  if (opts.debug) {
+    console.debug(`Running dateGen with AST:
+
+    ${JSON.stringify(ast, null, 2)}
+
+    and validTimes:
+
+    ${JSON.stringify(ast, null, 2)}
+
+    state:
+    ${state}
+    ${dateFromState(state, opts.utc)}
+
+    opts:
+    ${JSON.stringify(opts, null, 2)}
+    `)
+  }
 
   // Let's get down to business.
   // Handle times from smallest to largest, incrementing them to the next valid time if they're not valid.
   while (true) {
 
-    incrementStateUnlessValid(validTimes, state, TIMES.SECOND, reversed)
-    incrementStateUnlessValid(validTimes, state, TIMES.MINUTE, reversed)
-    incrementStateUnlessValid(validTimes, state, TIMES.HOUR, reversed)
-    incrementStateUnlessValid(validTimes, state, TIMES.DAY_OF_MONTH, reversed)
-    const shifted = incrementStateUnlessValid(validTimes, state, TIMES.MONTH, reversed)
+    incrementStateUnlessValid(validTimes, state, TIMES.SECOND, opts.reversed, opts.utc)
+    incrementStateUnlessValid(validTimes, state, TIMES.MINUTE, opts.reversed, opts.utc)
+    incrementStateUnlessValid(validTimes, state, TIMES.HOUR, opts.reversed, opts.utc)
+    incrementStateUnlessValid(validTimes, state, TIMES.DAY_OF_MONTH, opts.reversed, opts.utc)
+    const shifted = incrementStateUnlessValid(validTimes, state, TIMES.MONTH, opts.reversed, opts.utc)
     if (shifted) { // we need to check days again as changing month can break DoM/DoW match
-      if (reversed)
-        state[0] = 59, state[1] = 59, state[2] = 23, state[3] = maxDay(state, reversed)
+      if (opts.reversed)
+        state[0] = 59, state[1] = 59, state[2] = 23, state[3] = maxDay(state, opts.reversed)
       else
         state[0] = 0, state[1] = 0, state[2] = 0, state[3] = 1
       continue
     }
 
     // if we are still at startDate, we need to get the next one (due to spec)
-    const stateMS = dateFromState(state).getTime()
+    const stateMS = dateFromState(state, opts.utc).getTime()
     if (startDate.getTime() == stateMS)
-      incrementState(validTimes, state, TIMES.SECOND, reversed)
+      incrementState(validTimes, state, TIMES.SECOND, opts.reversed, opts.utc)
 
     // only yield allowed values
-    if (!reversed && endDate && stateMS > endDate.getTime()) return null
-    if (reversed && endDate && stateMS < Math.min(endDate.getTime(), startDate.getTime())) return null
+    if (!opts.reversed && endDate && stateMS > endDate.getTime()) return null
+    if (opts.reversed && endDate && stateMS < Math.min(endDate.getTime(), startDate.getTime())) return null
 
     // yield & increment, start over
-    yield dateFromState(state)
-    incrementState(validTimes, state, TIMES.SECOND, reversed)
+    yield dateFromState(state, opts.utc)
+    incrementState(validTimes, state, TIMES.SECOND, opts.reversed, opts.utc)
   }
 }

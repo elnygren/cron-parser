@@ -1,7 +1,6 @@
-import type { CronGenOptions } from './generator'
 import { dateGen } from './generator'
 import { parser } from './parser'
-import { CronGenerator, CronGeneratorSet } from './types'
+import { CronGenerator, CronGeneratorSet, CronGenOptions } from './types'
 
 export { parser }
 

@@ -30,6 +30,17 @@ export type CronGeneratorSet = {
   commands: string[],
 }
 
+/** Generator's options */
+export type CronGenOptions = {
+  startDate?: Date | string
+  endDate?: Date | string
+  reverse?: boolean
+  customState?: Date | string    // provide a custom starting state for the generator,
+  debug?: boolean       // debug prints
+  utc?: boolean         // use UTC methods for all Date operations (default true)
+  zeroMS?: boolean      // set milliseconds to zero (default false)
+}
+
 
 /**
  * Alternative JS/TS format for Cron.

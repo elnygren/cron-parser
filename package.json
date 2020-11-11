@@ -4,7 +4,10 @@
   "description": "Cron parser for date-fns",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -r ts-node/register test/**/*.test.ts && tap --no-ts --node-arg=--require=ts-node/register test/cron-parser/*.js"
+    "test": "npm run test:unit && npm run test:croner && npm run test:cron-parser",
+    "test:unit": "mocha -r ts-node/register test/**/*.test.ts",
+    "test:croner": "mocha -r ts-node/register test/croner/test.js",
+    "test:cron-parser": "tap --no-ts --node-arg=--require=ts-node/register test/cron-parser/*.js"
   },
   "keywords": [
     "date-fns",
@@ -20,6 +23,7 @@
     "chai": "^4.2.0",
     "mocha": "^8.2.0",
     "nyc": "^15.1.0",
+    "should": "^13.2.3",
     "sinon": "^9.2.1",
     "tap": "^14.10.8",
     "ts-node": "^9.0.0",

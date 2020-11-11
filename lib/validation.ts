@@ -7,12 +7,29 @@ import { assertUnreachable, prettyPrint, range } from './utils';
 export const MAX_DATE = new Date(8640000000000000);
 
 /** Amount of days in Jan...Dec, with 29 in February ((non) leap years must be handled explicitly) */
-export const DAYS_IN_MONTH = [ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ];
+export const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 
 /** The classic leap year validator */
 export function isLeapYear(year: number): boolean {
   return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)
+}
+
+/** String into Date, with validation */
+export const toDate = (s: string | Date | undefined): Date | undefined => {
+  /** https://stackoverflow.com/a/1353711 */
+  // @ts-ignore because we want to use isNaN for this
+  const isValidDate = (d: Date) => d instanceof Date && !isNaN(d);
+
+  if (typeof s === 'string' || s instanceof String) {
+    const date = new Date(s.toString())
+    if (isValidDate(date)) {
+      return date
+    } else {
+      throw new Error(`Invalid date: ${s}`);
+    }
+  }
+  return s
 }
 
 
