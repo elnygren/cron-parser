@@ -1,6 +1,7 @@
 # cron-parser
 
-Crontab parser for TypeScript. Creates a generator for iterating
+Crontab parser for TypeScript. Creates a generator for iterating.
+No dependencies, vanilla TypeScript.
 
 ## Basic usage
 
@@ -24,7 +25,7 @@ export type CronGenOptions = {
 ## Supported format
 
 ```
-*    *    *    *    *    *
+*    *    *    *    *    *    <command>
 ┬    ┬    ┬    ┬    ┬    ┬
 │    │    │    │    │    |
 │    │    │    │    │    └ day of week (0 - 7, Mon-Sun)
