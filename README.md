@@ -4,6 +4,7 @@ Crontab parser for TypeScript
 Provides a generator for accessing Date objects.
 
 No dependencies, just strict TypeScript.
+
 Some JS can be found from tests as I use tests from other projects (MIT licensed) to verify the implementation.
 
 ## Basic usage
