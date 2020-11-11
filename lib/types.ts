@@ -27,6 +27,7 @@ export type CronGenerator = Generator<Date, null, unknown>
 export type CronGeneratorSet = {
   expressions: CronGenerator[],
   variables?: { [key in string]: string },
+  commands: string[],
 }
 
 

@@ -69,7 +69,7 @@ function validDataForField(field: keyof CronAST['time'], ast: CronAST, reversed:
     minutes: maxMinValues[1],
     hour: maxMinValues[2],
     dayOfMonth: maxMinValues[3],
-    month: maxMinValues[4],
+    month: { from: 1, to: 12 },
     dayOfWeek: { from: 0, to: 6, },
   }[field]
 
