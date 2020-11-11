@@ -38,13 +38,11 @@ export type CronGenOptions = {
     ,   value list separator
     -   range of values
     /   step values
-    @yearly   (non-standard)
-    @annually (non-standard)
-    @monthly  (non-standard)
-    @weekly   (non-standard)
-    @daily    (non-standard)
-    @hourly   (non-standard)
-    @reboot   (non-standard)
+    @yearly  (non-standard)
+    @monthly (non-standard)
+    @weekly  (non-standard)
+    @daily   (non-standard)
+    @hourly  (non-standard)
 ```
 
 
