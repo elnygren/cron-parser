@@ -32,13 +32,13 @@ export type CronGeneratorSet = {
 
 /** Generator's options */
 export type CronGenOptions = {
-  startDate?: Date | string
-  endDate?: Date | string
-  reverse?: boolean
-  customState?: Date | string    // provide a custom starting state for the generator,
-  debug?: boolean       // debug prints
-  utc?: boolean         // use UTC methods for all Date operations (default true)
-  zeroMS?: boolean      // set milliseconds to zero (default false)
+  startDate?: Date | string     // startDate for generator
+  endDate?: Date | string       // endDate for generator, null is returned when done===true
+  reverse?: boolean             // go back in time instead of forward
+  utc?: boolean                 // use UTC methods for all Date operations (default true)
+  zeroMS?: boolean              // set milliseconds to zero (default false)
+  debug?: boolean               // debug prints
+  customState?: Date | string   // provide a custom starting state for the generator
 }
 
 

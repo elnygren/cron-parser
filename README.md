@@ -21,10 +21,13 @@ Where the options is defined as:
 
 ```typescript
 export type CronGenOptions = {
-  startDate?: Date,   // startDate for generator
-  endDate?: Date,     // endDate for generator, null is returned when done===true
-  reverse?: boolean,  // go back in time instead of forward
-  customState?: Date  // provide a custom starting state for the generator
+  startDate?: Date | string     // startDate for generator
+  endDate?: Date | string       // endDate for generator, null is returned when done===true
+  reverse?: boolean             // go back in time instead of forward
+  utc?: boolean                 // use UTC methods for all Date operations (default true)
+  zeroMS?: boolean              // set milliseconds to zero (default false)
+  debug?: boolean               // debug prints
+  customState?: Date | string   // provide a custom starting state for the generator
 }
 ```
 
@@ -51,7 +54,15 @@ export type CronGenOptions = {
     @daily   (non-standard)
     @hourly  (non-standard)
 ```
+## Tests
 
+We have tests from other Crontab related projects (under MIT) in `tests/`.
+See `package.json` for running individual test suites.
+
+```bash
+# run all tests
+npm run test
+```
 
 ## Examples
 
