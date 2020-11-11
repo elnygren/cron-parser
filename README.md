@@ -1,6 +1,8 @@
 # cron-parser
 
-Crontab parser for TypeScript. Creates a generator for iterating.
+Crontab parser for TypeScript.  
+Provides a generator for accessing Date objects.
+
 No dependencies, vanilla TypeScript.
 
 ## Basic usage
@@ -8,7 +10,9 @@ No dependencies, vanilla TypeScript.
 ```typescript
 import * as Cron from "./lib"
 
-const generator = Cron.loadOne('5 4 * * *', options)
+const gen = Cron.loadOne('5 4 * * *', { startDate: new Date('2020-11-11') })
+gen.next().value // => Date('2020-11-11T04:05:00.000Z')
+gen.next().value // => Date('2020-11-12T04:05:00.000Z')
 ```
 
 Where the options is defined as:
