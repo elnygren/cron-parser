@@ -4,6 +4,7 @@ import {
   CronConfig,
 } from './types'
 import { validateCell, validateMonthAndDay } from './validation'
+import { replaceAll } from './utils'
 
 export type Token = { command?: string, time: CronCell[] }
 export type Tokens = { variables: { [x in string]: string }, expressions: Array<Token> }
@@ -46,7 +47,7 @@ function singleRowTokenizer(cronString: string, errMsg: string): Token {
     cronString.startsWith(predef) ? time : acc, cronString
   )
   aliasesReplaced = Object.entries(ALIASES).reduce((acc, [match, time]) =>
-    acc.replaceAll(match, time), aliasesReplaced
+    replaceAll(acc, match, time), aliasesReplaced
   )
 
   const values = aliasesReplaced.split(/\s+/).filter(x => x !== '')
@@ -153,7 +154,13 @@ function tokenizer(cronString: string): Tokens {
         response.variables[matches[1].trim()] = matches[2].trim();
       } else {
         // crontab expression
-        response.expressions.push(singleRowTokenizer(block, cronString))
+        try {
+          response.expressions.push(singleRowTokenizer(block, cronString))
+        } catch (e) {
+          console.error(`Error when parsing block '${block}' of ${cronString}`)
+          throw e
+        }
+
       }
     })
 

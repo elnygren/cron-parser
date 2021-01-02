@@ -47,12 +47,30 @@ export type CronGenOptions = {
  * The Cron string format is mapped to this so it's a feature complete substitute.
  */
 export type CronConfig = {
-  seconds?: CronCell,
-  minutes?: CronCell,
-  hour?: CronCell,
-  dayOfMonth?: CronCell,
-  month?: CronCell,
-  dayOfWeek?: CronCell,
-  command?: string,
+  seconds?: CronCell
+  minutes?: CronCell
+  hour?: CronCell
+  dayOfMonth?: CronCell
+  month?: CronCell
+  dayOfWeek?: CronCell
+  command?: string
+  variables?: { [key in string]: string }
+}
+
+/**
+ * JS/TS format for our WeekMode "Cron" generator.
+ *
+ * Instead of matching Month,Day of Month / Day of Week,
+ * we match with week number and day of week.
+ */
+export type WeekModeCronAST = {
+  time: {
+    seconds: CronCell
+    minutes: CronCell
+    hour: CronCell
+    dayOfWeek: CronCell
+    week: CronCell
+  }
+  command?: string
   variables?: { [key in string]: string }
 }
