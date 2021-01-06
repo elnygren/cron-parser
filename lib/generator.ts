@@ -142,6 +142,14 @@ function leapYearCheck(state: TimeState, day: number): boolean {
 }
 
 function canIncrementIndex(state: TimeState, i: TimeStateIndex, reversed: boolean): boolean {
+  // not all months have same amount of days, so we can't rely on maxMinValues
+  if (i === TIMES.DAY_OF_MONTH) {
+    const m = state[TIMES.MONTH]
+    return reversed
+     ? state[i] - 1 >= 1
+     : state[i] + 1 <= DAYS_IN_MONTH[m]
+  }
+
   return reversed
     ? state[i] - 1 >= maxMinValues[i].from
     : state[i] + 1 <= maxMinValues[i].to
