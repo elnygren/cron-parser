@@ -1,37 +1,32 @@
-import {
-  CronCell,
-  CronAST,
-} from './types'
-import { assertUnreachable, prettyPrint, range } from './utils';
+import { CronCell, CronAST } from './types'
+import { assertUnreachable, prettyPrint, range } from './utils'
 
-export const MAX_DATE = new Date(8640000000000000);
+export const MAX_DATE = new Date(8640000000000000)
 
 /** Amount of days in Jan...Dec, with 29 in February ((non) leap years must be handled explicitly) */
-export const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
+export const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 /** The classic leap year validator */
 export function isLeapYear(year: number): boolean {
-  return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)
+  return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
 
 /** String into Date, with validation */
 export const toDate = (s: string | Date | undefined): Date | undefined => {
   /** https://stackoverflow.com/a/1353711 */
   // @ts-ignore because we want to use isNaN for this
-  const isValidDate = (d: Date) => d instanceof Date && !isNaN(d);
+  const isValidDate = (d: Date) => d instanceof Date && !isNaN(d)
 
   if (typeof s === 'string' || s instanceof String) {
     const date = new Date(s.toString())
     if (isValidDate(date)) {
       return date
     } else {
-      throw new Error(`Invalid date: ${s}`);
+      throw new Error(`Invalid date: ${s}`)
     }
   }
   return s
 }
-
 
 /**
  * Numeric validations are as follows:
@@ -52,7 +47,10 @@ const numericValidators = {
 }
 
 /** Validate any CronAST field+val with the correct numericValidator. */
-export const validateCell = (field: keyof CronAST['time'], val: CronCell): CronCell => {
+export const validateCell = (
+  field: keyof CronAST['time'],
+  val: CronCell,
+): CronCell => {
   const validator = numericValidators[field]
   const validate = (val: CronCell): boolean => {
     switch (val.type) {
@@ -65,7 +63,12 @@ export const validateCell = (field: keyof CronAST['time'], val: CronCell): CronC
       case 'stepfrom':
         return validator(val.step) && val.step !== 0 && validator(val.from)
       case 'steprange':
-        return validator(val.step) && val.step !== 0 && validator(val.from) && validator(val.to)
+        return (
+          validator(val.step) &&
+          val.step !== 0 &&
+          validator(val.from) &&
+          validator(val.to)
+        )
       case 'range':
         return validator(val.from) && validator(val.to)
       case 'list':
@@ -108,15 +111,25 @@ export const validateMonthAndDay = (ast: CronAST): boolean => {
     case 'number':
       return dayOfMonth <= DAYS_IN_MONTH[month.value - 1]
     case 'step':
-      return range(0, 12).filter(m => m % month.step === 0).some(m => dayOfMonth <= DAYS_IN_MONTH[m])
+      return range(0, 12)
+        .filter((m) => m % month.step === 0)
+        .some((m) => dayOfMonth <= DAYS_IN_MONTH[m])
     case 'stepfrom':
-      return range(0, 12).filter(m => m % month.step === 0).some(m => dayOfMonth <= DAYS_IN_MONTH[m])
+      return range(0, 12)
+        .filter((m) => m % month.step === 0)
+        .some((m) => dayOfMonth <= DAYS_IN_MONTH[m])
     case 'steprange':
-      return range(month.from, month.to).filter(m => m % month.step === 0).some(m => dayOfMonth <= DAYS_IN_MONTH[m])
+      return range(month.from, month.to)
+        .filter((m) => m % month.step === 0)
+        .some((m) => dayOfMonth <= DAYS_IN_MONTH[m])
     case 'range':
-      return range(month.from, month.to + 1).some(month => dayOfMonth <= DAYS_IN_MONTH[month - 1])
+      return range(month.from, month.to + 1).some(
+        (month) => dayOfMonth <= DAYS_IN_MONTH[month - 1],
+      )
     case 'list':
-      return month.values.some(month => dayOfMonth <= DAYS_IN_MONTH[month - 1])
+      return month.values.some(
+        (month) => dayOfMonth <= DAYS_IN_MONTH[month - 1],
+      )
     default:
       return assertUnreachable(month)
   }

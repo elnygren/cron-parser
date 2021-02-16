@@ -1,13 +1,12 @@
-import { CronAST, CronCell } from "./types"
+import { CronAST, CronCell } from './types'
 
 export function assertUnreachable(x: never): never {
-  throw new Error("assertUnreachable");
+  throw new Error('assertUnreachable')
 }
 
 export function range(start: number, end: number): number[] {
-  return new Array(end - start).fill(0).map((d, i) => i + start);
+  return new Array(end - start).fill(0).map((d, i) => i + start)
 }
-
 
 /**
  * Replace all the occerencess of $find by $replace in $originalString
@@ -17,10 +16,13 @@ export function range(start: number, end: number): number[] {
  * @param  {replace} input - Replacement key word
  * @return {String}       Output string
  */
-export function replaceAll(originalString: string, find: string, replace: string): string {
-  return originalString.replace(new RegExp(find, 'g'), replace);
-};
-
+export function replaceAll(
+  originalString: string,
+  find: string,
+  replace: string,
+): string {
+  return originalString.replace(new RegExp(find, 'g'), replace)
+}
 
 /** prettyPrint helper */
 const pp = (val: CronCell): string => {
@@ -44,9 +46,10 @@ const pp = (val: CronCell): string => {
   }
 }
 
-
 /** Pretty print the AST and some intermediary formats */
-export function prettyPrint(x: string[] | CronCell[] | CronCell | CronAST): string {
+export function prettyPrint(
+  x: string[] | CronCell[] | CronCell | CronAST,
+): string {
   if (Array.isArray(x)) return x.join(' ')
 
   if (typeof (x as CronCell).type === 'string') {
@@ -54,10 +57,11 @@ export function prettyPrint(x: string[] | CronCell[] | CronCell | CronAST): stri
   }
 
   const t = (x as CronAST).time
-  const out = `${pp(t.minutes)} ${pp(t.hour)} ${pp(t.dayOfMonth)} ${pp(t.month)} ${pp(t.dayOfWeek)}`
+  const out = `${pp(t.minutes)} ${pp(t.hour)} ${pp(t.dayOfMonth)} ${pp(
+    t.month,
+  )} ${pp(t.dayOfWeek)}`
   if (t.seconds === undefined) {
     return out
   }
   return `${pp(t.seconds)} ${out}`
 }
-

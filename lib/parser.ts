@@ -1,13 +1,12 @@
-import {
-  CronCell,
-  CronAST,
-  CronConfig,
-} from './types'
+import { CronCell, CronAST, CronConfig } from './types'
 import { validateCell, validateMonthAndDay } from './validation'
 import { replaceAll } from './utils'
 
-export type Token = { command?: string, time: CronCell[] }
-export type Tokens = { variables: { [x in string]: string }, expressions: Array<Token> }
+export type Token = { command?: string; time: CronCell[] }
+export type Tokens = {
+  variables: { [x in string]: string }
+  expressions: Array<Token>
+}
 export const isNumber = (x: any): x is number => !isNaN(parseInt(x, 10))
 
 const PREDEFINED = {
@@ -15,17 +14,32 @@ const PREDEFINED = {
   '@monthly': '0 0 1 * *',
   '@weekly': '0 0 * * 0',
   '@daily': '0 0 * * *',
-  '@hourly': '0 * * * *'
-};
+  '@hourly': '0 * * * *',
+}
 
 const ALIASES = {
   // weekdays
-  sun: '0', mon: '1', tue: '2', wed: '3', thu: '4', fri: '5', sat: '6',
+  sun: '0',
+  mon: '1',
+  tue: '2',
+  wed: '3',
+  thu: '4',
+  fri: '5',
+  sat: '6',
   // months
-  jan: '1', feb: '2', mar: '3', apr: '4', may: '5', jun: '6',
-  jly: '7', aug: '8', sep: '9', oct: '10', nov: '11', dec: '12',
+  jan: '1',
+  feb: '2',
+  mar: '3',
+  apr: '4',
+  may: '5',
+  jun: '6',
+  jly: '7',
+  aug: '8',
+  sep: '9',
+  oct: '10',
+  nov: '11',
+  dec: '12',
 }
-
 
 const possibleSyntaxError = (i: number, s: string): boolean => {
   if (i < 5) {
@@ -41,20 +55,21 @@ const possibleSyntaxError = (i: number, s: string): boolean => {
  * @param errMsg suitable print to error message, e.g the original user input
  */
 function singleRowTokenizer(cronString: string, errMsg: string): Token {
-
   let aliasesReplaced = cronString
-  aliasesReplaced = Object.entries(PREDEFINED).reduce((acc, [predef, time]) =>
-    cronString.startsWith(predef) ? time : acc, cronString
+  aliasesReplaced = Object.entries(PREDEFINED).reduce(
+    (acc, [predef, time]) => (cronString.startsWith(predef) ? time : acc),
+    cronString,
   )
-  aliasesReplaced = Object.entries(ALIASES).reduce((acc, [match, time]) =>
-    replaceAll(acc, match, time), aliasesReplaced
+  aliasesReplaced = Object.entries(ALIASES).reduce(
+    (acc, [match, time]) => replaceAll(acc, match, time),
+    aliasesReplaced,
   )
 
-  const values = aliasesReplaced.split(/\s+/).filter(x => x !== '')
+  const values = aliasesReplaced.split(/\s+/).filter((x) => x !== '')
 
   if (values.length < 5) {
     throw new Error(
-      `invalid length detected in cron syntax: "${errMsg}" has length ${values.length} (5 or 6 expected)`
+      `invalid length detected in cron syntax: "${errMsg}" has length ${values.length} (5 or 6 expected)`,
     )
   }
 
@@ -62,31 +77,30 @@ function singleRowTokenizer(cronString: string, errMsg: string): Token {
   let command = ''
 
   for (let i = 0; i < values.length; i++) {
-    let match; // regexp tricks
-    const s = values[i];
+    let match // regexp tricks
+    const s = values[i]
 
     // wildcard case
     if (s === '*' || s === '?') time.push({ type: '*' })
-
     // step
-    else if (match = s.match(/^\*\/(\d{1,2})$/)) {
+    else if ((match = s.match(/^\*\/(\d{1,2})$/))) {
       time.push({
         type: 'step',
-        step: parseInt(match[1], 10)
+        step: parseInt(match[1], 10),
       })
     }
 
     // stepfrom
-    else if (match = s.match(/^(\d{1,2})\/(\d{1,2})$/)) {
+    else if ((match = s.match(/^(\d{1,2})\/(\d{1,2})$/))) {
       time.push({
         type: 'stepfrom',
         step: parseInt(match[2], 10),
-        from: parseInt(match[1], 10)
+        from: parseInt(match[1], 10),
       })
     }
 
     // steprange
-    else if (match = s.match(/^(\d{1,2})-(\d{1,2})\/(\d{1,2})$/)) {
+    else if ((match = s.match(/^(\d{1,2})-(\d{1,2})\/(\d{1,2})$/))) {
       time.push({
         type: 'steprange',
         from: parseInt(match[1], 10),
@@ -96,7 +110,7 @@ function singleRowTokenizer(cronString: string, errMsg: string): Token {
     }
 
     // range, eg. 10-12
-    else if (match = s.match(/^(\d{1,2})-(\d{1,2})$/)) {
+    else if ((match = s.match(/^(\d{1,2})-(\d{1,2})$/))) {
       const a = parseInt(match[1], 10)
       const b = parseInt(match[2], 10)
       if (a < b) {
@@ -107,11 +121,14 @@ function singleRowTokenizer(cronString: string, errMsg: string): Token {
     }
 
     // single or double digit number
-    else if (match = s.match(/^\d{1,2}$/)) time.push({ type: 'number', value: parseInt(match[0], 10) })
-
+    else if ((match = s.match(/^\d{1,2}$/)))
+      time.push({ type: 'number', value: parseInt(match[0], 10) })
     // list
-    else if (s.includes(',') && s.split(',').every(x => isNumber(x))) {
-      time.push({ type: 'list', values: s.split(',').map(x => parseInt(x, 10)) })
+    else if (s.includes(',') && s.split(',').every((x) => isNumber(x))) {
+      time.push({
+        type: 'list',
+        values: s.split(',').map((x) => parseInt(x, 10)),
+      })
     }
 
     // it's an error except if we are at the 5th in which case we can start assuming it's part of the command
@@ -122,7 +139,6 @@ function singleRowTokenizer(cronString: string, errMsg: string): Token {
 
   return { time, command: command.length === 0 ? undefined : command }
 }
-
 
 /**
  * Tokenizer takes in a Cron string and outputs a list of CronCells.
@@ -142,16 +158,16 @@ function tokenizer(cronString: string): Tokens {
   }
 
   blocks
-    .map(block => block.trim().toLowerCase())
+    .map((block) => block.trim().toLowerCase())
     // crontab comment
-    .filter(block => !block.startsWith('#'))
+    .filter((block) => !block.startsWith('#'))
     // skip empty lines if handling many lines
-    .filter(block => blocks.length > 1 ? block.length !== 0 : true)
+    .filter((block) => (blocks.length > 1 ? block.length !== 0 : true))
     .forEach((block) => {
       // crontab ENV variable
       const matches = block.match(/^(.*)=(.*)$/)
       if (matches) {
-        response.variables[matches[1].trim()] = matches[2].trim();
+        response.variables[matches[1].trim()] = matches[2].trim()
       } else {
         // crontab expression
         try {
@@ -160,46 +176,83 @@ function tokenizer(cronString: string): Tokens {
           console.error(`Error when parsing block '${block}' of ${cronString}`)
           throw e
         }
-
       }
     })
 
   return response
 }
 
-
 /**
  * Map tokens to a CronConfig.
  * Note that we normalize all input formats to CronConfig and then provide a CronConfig=>CronAST function.
  */
-function tokensToCronConfig(cells: CronCell[], { command, variables }: { command?: string, variables?: { [key in string]: string } }): CronConfig {
+function tokensToCronConfig(
+  cells: CronCell[],
+  {
+    command,
+    variables,
+  }: { command?: string; variables?: { [key in string]: string } },
+): CronConfig {
   if (cells.length === 5) {
     const [minutes, hour, dayOfMonth, month, dayOfWeek] = cells
     return { minutes, hour, dayOfMonth, month, dayOfWeek, command, variables }
   } else if (cells.length === 6) {
     const [seconds, minutes, hour, dayOfMonth, month, dayOfWeek] = cells
-    return { seconds, minutes, hour, dayOfMonth, month, dayOfWeek, command, variables }
+    return {
+      seconds,
+      minutes,
+      hour,
+      dayOfMonth,
+      month,
+      dayOfWeek,
+      command,
+      variables,
+    }
   }
-  throw new Error(`Invalid length for cron input: ${cells} has length ${cells.length}, expected 5 or 6.`);
+  throw new Error(
+    `Invalid length for cron input: ${cells} has length ${cells.length}, expected 5 or 6.`,
+  )
 }
 
 /** Validate data and create the CronAST. */
 function toValidAST(input: CronConfig): CronAST {
   const ast: CronAST = {
     time: {
-      minutes: validateCell('minutes', input.minutes === undefined ? { type: '*' } : input.minutes),
-      hour: validateCell('hour', input.hour === undefined ? { type: '*' } : input.hour),
-      dayOfMonth: validateCell('dayOfMonth', input.dayOfMonth === undefined ? { type: '*' } : input.dayOfMonth),
-      month: validateCell('month', input.month === undefined ? { type: '*' } : input.month),
-      dayOfWeek: validateCell('dayOfWeek', input.dayOfWeek === undefined ? { type: '*' } : input.dayOfWeek),
-      seconds: input.seconds !== undefined ? validateCell('seconds', input.seconds) : { type: 'number', value: 0 },
+      minutes: validateCell(
+        'minutes',
+        input.minutes === undefined ? { type: '*' } : input.minutes,
+      ),
+      hour: validateCell(
+        'hour',
+        input.hour === undefined ? { type: '*' } : input.hour,
+      ),
+      dayOfMonth: validateCell(
+        'dayOfMonth',
+        input.dayOfMonth === undefined ? { type: '*' } : input.dayOfMonth,
+      ),
+      month: validateCell(
+        'month',
+        input.month === undefined ? { type: '*' } : input.month,
+      ),
+      dayOfWeek: validateCell(
+        'dayOfWeek',
+        input.dayOfWeek === undefined ? { type: '*' } : input.dayOfWeek,
+      ),
+      seconds:
+        input.seconds !== undefined
+          ? validateCell('seconds', input.seconds)
+          : { type: 'number', value: 0 },
     },
     command: input.command,
     variables: input.variables,
   }
 
   if (!validateMonthAndDay(ast)) {
-    throw new Error(`invalid dayOfMonth (${JSON.stringify(ast.time.dayOfMonth)}) for given month(s)`);
+    throw new Error(
+      `invalid dayOfMonth (${JSON.stringify(
+        ast.time.dayOfMonth,
+      )}) for given month(s)`,
+    )
   }
   return ast
 }
@@ -226,15 +279,17 @@ function toValidAST(input: CronConfig): CronAST {
  *
  */
 export function parser(input: string | CronConfig | CronConfig[]): CronAST[] {
-  let _input: CronConfig[];
+  let _input: CronConfig[]
   if (typeof input === 'string' || input instanceof String) {
     const { expressions, variables } = tokenizer(input.toString())
-    _input = expressions.map(expr => tokensToCronConfig(expr.time, { command: expr.command, variables }))
+    _input = expressions.map((expr) =>
+      tokensToCronConfig(expr.time, { command: expr.command, variables }),
+    )
   } else if (Array.isArray(input)) {
     _input = input
   } else {
     _input = [input]
   }
 
-  return _input.map(x => toValidAST(x))
+  return _input.map((x) => toValidAST(x))
 }

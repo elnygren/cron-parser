@@ -2,7 +2,7 @@
   "name": "cron-parser",
   "version": "0.1.0",
   "description": "Cron parser for date-fns",
-  "main": "index.js",
+  "main": "lib/index.ts",
   "scripts": {
     "test": "npm run test:unit && npm run test:croner && npm run test:cron-parser",
     "test:unit": "mocha -r ts-node/register test/**/*.test.ts",
