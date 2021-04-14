@@ -1,7 +1,9 @@
 # cron-parser
 
-Crontab parser for TypeScript
-Provides a generator for accessing Date objects.
+Crontab parser for TypeScrip that provides a generator for accessing Date objects.
+Mostly built for myself to be used in a project of mine. I don't really need the official crontab file support and the comments/cmd syntax but I added light support for those for fun.
+
+This library does not actually run anything nor does it replace crontab, it's just for generating timestamps according to the spec.
 
 No dependencies, just strict TypeScript.
 
@@ -27,7 +29,7 @@ export type CronGenOptions = {
   utc?: boolean                 // use UTC methods for all Date operations (default true)
   zeroMS?: boolean              // set milliseconds to zero (default false)
   debug?: boolean               // debug prints
-  customState?: Date | string   // provide a custom starting state for the generator
+  customState?: Date | string   // provide a custom starting state for the generator instead of "right now" (new Date();)
 }
 ```
 
